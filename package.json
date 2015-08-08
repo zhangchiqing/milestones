@@ -1,0 +1,30 @@
+{
+  "name": "milestones",
+  "version": "1.0.0",
+  "description": "- [ ]",
+  "main": "",
+  "dependencies": {
+    "basscss": "^7.0.3",
+    "browserify": "^11.0.1",
+    "beefy": "^2.1.5",
+    "rx-lite": "^3.0.0",
+    "underscore": "^1.8.3",
+    "virtual-dom": "^2.1.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "npm run beefy",
+    "beefy": "./node_modules/.bin/beefy main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangchiqing/milestones.git"
+  },
+  "author": "Leo Zhang (zhangchiqing)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zhangchiqing/milestones/issues"
+  },
+  "homepage": "https://github.com/zhangchiqing/milestones#readme"
+}
