@@ -5,16 +5,19 @@
   "main": "",
   "dependencies": {
     "basscss": "^7.0.3",
-    "browserify": "^11.0.1",
     "beefy": "^2.1.5",
+    "browserify": "^11.0.1",
+    "lodash": "^3.10.1",
+    "moment": "^2.10.6",
+    "rx": "^3.0.0",
+    "rx-dom": "^6.0.0",
     "rx-lite": "^3.0.0",
-    "underscore": "^1.8.3",
     "virtual-dom": "^2.1.1"
   },
   "devDependencies": {},
   "scripts": {
     "start": "npm run beefy",
-    "beefy": "./node_modules/.bin/beefy main.js",
+    "beefy": "./node_modules/.bin/beefy main.js --debug --live --open",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
