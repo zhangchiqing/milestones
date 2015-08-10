@@ -56,7 +56,8 @@ href: 'https://help.github.com/articles/creating-an-access-token-for-command-lin
     ]),
     h('input.js-token.field.p2.col-10', { value: c.token }),
 
-    h('button.js-submit.block.btn.btn-primary.mt2.p2.px3',
+    h('button.js-submit.block.btn.btn-primary.mt2.p2.px3' +
+      yes(c.processing, '.is-disabled'),
       'Create!'),
   ]);
 }
@@ -151,8 +152,8 @@ var formS = Rx.Observable.combineLatest([
   });
 
 var queryS = formS.map(function toQuery(args) {
-  var base = moment().day(1);
-  if (base.isBefore()) {
+  var base = moment().day(args.day);
+  while (base.isBefore()) {
     base.add(args.duration, 'days');
   }
 
@@ -203,7 +204,8 @@ function sequence(list, returnObservable) {
 }
 
 
-var processingS = submitS.withLatestFrom(queryS, function(click, query) {
+var processingS = submitS
+.withLatestFrom(queryS, function(click, query) {
   return query;
 })
 .flatMap(function createMilestones(querys) {
