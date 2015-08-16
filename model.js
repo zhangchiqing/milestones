@@ -2,6 +2,7 @@
 
 var Rx = require('rx');
 var u = require('./util');
+var _ = require('lodash');
 
 var start = {
   repo: 'zhangchiqing/milestones',
@@ -52,52 +53,59 @@ function makeModification(action) {
   var mods = [];
 
   var modEditRepo = action.editRepo.map(function(repo) {
-    return function(model) {
-      model.repo = repo;
-      return model;
+    return function(query) {
+      query.repo = repo;
+      return query;
     };
   });
   mods.add(modEditRepo);
 
   var modEditDuration = action.editDuration.map(function(days) {
-    return function(model) {
-      model.days = days;
-      return model;
+    return function(query) {
+      query.days = days;
+      return query;
     };
   });
   mods.add(modEditDuration);
 
   var modSelectDay = action.selectDay.map(function(duration) {
-    return function(model) {
-      model.duration = duration;
-      return model;
+    return function(query) {
+      query.duration = duration;
+      return query;
     };
   });
   mods.add(modSelectDay);
-
-  var modSend = action.clickSubmit.map(function(token) {
-    return function(model) {
-      model.progress = 0;
-      return model;
-    };
-  });
-  mods.add(modSend);
-
-  var modProgress = action.clickSubmit.map(function(token) {
-    return function(model) {
-      model.progress = 1;
-      return model;
-    };
-  });
-  mods.add(modProgress);
 
   return Rx.Observable.merge.apply(Rx.Observable, mods);
 }
 
 module.export = function(action) {
+
+  /**
+   * ---m-----m--------
+   * ------d-------d---
+   * ---q--q--q----q---
+   * -----------s--------------s------
+   * -------------r-r-r-r-r-c-----e-c
+   * -------------t-t-t-t-t-o-----e-o
+   * ---q--q--q-s-tqt-t-t-t-o--s--e-o
+   */
   var modificationS = makeModification(action);
-  return modificationS.startWith(start)
-  .scan(function(model, modify) {
-    return modify(model);
+  var queryS = modificationS.startWith(start)
+  .scan(function(query, modify) {
+    return modify(query);
+  });
+
+  var submitS = action.submit.withLatestFrom(queryS, function(click, query) {
+    return query;
+  });
+
+  var respS = submitS.flatMap(function createMilestones(querys) {
+    return sequence(querys, createMilestone)
+    .reduce(_.extend, {});
+  });
+
+  return queryS.combineLatest(respS, function(query, resp) {
+    return _.extend(query, resp);
   });
 };

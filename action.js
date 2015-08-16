@@ -2,12 +2,17 @@
 
 var Rx = require('rx');
 Rx.DOM = require('rx-dom').DOM;
+var _ = require('lodash');
 
 function evtS(selector, evt, pluck) {
   var elm = document.querySelector(selector);
   var eS = Rx.DOM.fromEvent(elm, evt);
 
-  return pluck ? eS.pluck('target', pluck) : eS;
+  if (pluck) {
+    return eS.pluck('target', pluck);
+  } else {
+    return eS;
+  }
 }
 
 function fromEventOfRootElm(root, evt, selector) {
@@ -42,7 +47,7 @@ module.exports = function(root) {
       }),
 
     editWeeks: mapFilterNumber(fromInputOfBody('js-weeks')),
-    clickSubmit: fromEventOfRootElm(root, 'click', 'js-submit')
+    submit: fromEventOfRootElm(root, 'click', 'js-submit')
       .map(function() {
         return $(root).find('.js-token').val();
       }),
