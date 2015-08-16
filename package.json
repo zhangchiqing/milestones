@@ -15,8 +15,11 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "npm run beefy",
-    "beefy": "./node_modules/.bin/beefy ./src/main.js --debug --live --open",
+    "start": "npm run dev",
+    "dev": "./node_modules/.bin/beefy ./src/main.js --debug --live --open",
+    "dist": "npm run dist-js && npm run dist-css",
+    "dist-js": "./node_modules/.bin/browserify ./src/main.js -o ./dist/bundle.js",
+    "dist-css": "cp ./node_modules/basscss/css/basscss.css ./dist/bundle.css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
