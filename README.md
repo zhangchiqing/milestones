@@ -1,5 +1,5 @@
 # milestones
-GitHub Milestone Generator - Create your sprint as milestones in batch
+GitHub Milestone Generator - Create milestones in batch
 
 ### Stack
 [RxJS](https://github.com/Reactive-Extensions/RxJS) + [Virtual-DOM](https://github.com/Matt-Esch/virtual-dom)
