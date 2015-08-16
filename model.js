@@ -13,7 +13,7 @@ var init = {
   day: 1,
   weeks: 1,
   // TODO: remove token
-  token: '93189dc467d5c7cb1db4efaa999bef3e1fda5357',
+  token: '2939f7e73b0213d40a6709335962187528696c68',
   days: _.range(1, 8).map(function(day) {
     return {
       day: day,
@@ -47,7 +47,6 @@ function createMilestone(query) {
     u.yes(query.token, '?access_token=' + query.token)]
     .join('');
   var body = _.pick(query, ['title', 'state', 'description', 'due_on']);
-  // TODO: validation
 
   return $.ajax({
     url: url,
@@ -117,38 +116,44 @@ module.exports = function(action) {
    * ---m-----m--------
    * ------d-------d---
    * i--q--q--q----q---
+   * i--Q--Q--Q----Q---
    * -----------s--------------s------
    *            --r-r-r-r-r-c  ---e-c
    * -------------t-t-t-t-t-o-----e-o
-   * i--q--q--q-s-tqt-t-t-t-o--s--e-o
+   * i--Q--Q--Q-s-tQt-t-t-t-o--s--e-o
    */
   var modificationS = makeModification(action);
   var queryS = modificationS.startWith(init)
   .scan(function(query, modify) {
     return modify(query);
+  })
+  .map(function(query) {
+    query.querys = toQuery(query);
+    return query;
   });
 
   var submitS = action.submit.withLatestFrom(queryS, function(click, query) {
     query.processing = true;
     query.error = null;
+    query.success = null;
     return query;
   });
 
-  var batchQueryS = submitS.map(toQuery);
-
-  var respS = batchQueryS.flatMap(function createMilestones(querys) {
+  var respS = submitS.flatMap(function createMilestones(query) {
+    var querys = query.querys;
     return sequence(querys, createMilestone)
     .catch(function(error) {
       error = error.responseJSON ? error.responseJSON : error;
       return Rx.Observable.just({ error: error.message });
     });
-    //.reduce(function(memo, resp) {
-    //  return _.extend(memo, resp);
-    //}, {});
   })
   .withLatestFrom(queryS, function(resp, query) {
     _.extend(query, resp);
     query.processing = false;
+    if (!resp.error) {
+      query.success = true;
+    }
+
     return query;
   });
 
