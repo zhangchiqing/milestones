@@ -1,8 +1,10 @@
+/* jshint -W079 */
+
 'use strict';
 
-var Rx = require('rx');
-Rx.DOM = require('rx-dom').DOM;
 var _ = require('lodash');
+var Rx = require('rx');
+var $ = require('jquery');
 
 function evtS(selector, evt, pluck) {
   var elm = document.querySelector(selector);
@@ -15,10 +17,10 @@ function evtS(selector, evt, pluck) {
   }
 }
 
-function fromEventOfRootElm(root, evt, selector) {
+function fromEventOfRootElm(mountNode, evt, selector) {
   var hasClass = _.partialRight(_.contains, selector);
 
-  return Rx.DOM.fromEvent(root, evt)
+  return Rx.Observable.fromEvent(mountNode, evt)
   .filter(function(e) {
     return hasClass(e.target.className.split(' '));
   })
@@ -31,14 +33,14 @@ function mapFilterNumber(stream) {
     .filter(_.negate(_.isNaN));
 }
 
-module.exports = function(root) {
-  var fromInputOfBody = _.partial(fromEventOfRootElm, root, 'input');
+module.exports = function(mountNode) {
+  var fromInputOfBody = _.partial(fromEventOfRootElm, mountNode, 'input');
 
   return {
     editRepo: fromInputOfBody('js-repo'),
     editDuration: fromInputOfBody('js-duration'),
 
-    selectDay: fromEventOfRootElm(root, 'click')
+    selectDay: fromEventOfRootElm(mountNode, 'click')
       .filter(function(e) {
         return _.contains(e.target.className.split(' '), 'js-day');
       })
@@ -47,9 +49,9 @@ module.exports = function(root) {
       }),
 
     editWeeks: mapFilterNumber(fromInputOfBody('js-weeks')),
-    submit: fromEventOfRootElm(root, 'click', 'js-submit')
+    submit: fromEventOfRootElm(mountNode, 'click', 'js-submit')
       .map(function() {
-        return $(root).find('.js-token').val();
+        return $(mountNode).find('.js-token').val();
       }),
   };
 };

@@ -1,18 +1,13 @@
 'use strict';
 
+var Rx = require('Rx');
 var _ = require('lodash');
 var h = require('virtual-dom/h');
-var diff = require('virtual-dom/diff');
-var patch = require('virtual-dom/patch');
-var createElement = require('virtual-dom/create-element');
-var u = require('util');
+var u = require('./util');
 
 function attr(attrs) {
   return { attributes: attrs };
 }
-
-var tree;
-var $main;
 
 function renderWithContext(c) {
   return h('.container.p3', [
@@ -54,19 +49,6 @@ href: 'https://help.github.com/articles/creating-an-access-token-for-command-lin
       u.yes(c.processing, '.is-disabled'),
       'Create!'),
   ]);
-}
-
-function init(data) {
-  tree = renderWithContext(data);
-  $main = createElement(tree);
-  document.body.appendChild($main);
-}
-
-function render(data) {
-  var newTree = renderWithContext(data);
-  var patches = diff(tree, newTree);
-  $main = patch($main, patches);
-  tree = newTree;
 }
 
 module.exports = function(model) {

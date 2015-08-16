@@ -1,8 +1,8 @@
 'use strict';
 
 var Rx = require('rx');
-var u = require('./util');
 var _ = require('lodash');
+var u = require('./util');
 
 var start = {
   repo: 'zhangchiqing/milestones',
@@ -58,7 +58,7 @@ function makeModification(action) {
       return query;
     };
   });
-  mods.add(modEditRepo);
+  mods.push(modEditRepo);
 
   var modEditDuration = action.editDuration.map(function(days) {
     return function(query) {
@@ -66,7 +66,7 @@ function makeModification(action) {
       return query;
     };
   });
-  mods.add(modEditDuration);
+  mods.push(modEditDuration);
 
   var modSelectDay = action.selectDay.map(function(duration) {
     return function(query) {
@@ -74,12 +74,12 @@ function makeModification(action) {
       return query;
     };
   });
-  mods.add(modSelectDay);
+  mods.push(modSelectDay);
 
   return Rx.Observable.merge.apply(Rx.Observable, mods);
 }
 
-module.export = function(action) {
+module.exports = function(action) {
 
   /**
    * ---m-----m--------
@@ -88,7 +88,7 @@ module.export = function(action) {
    * -----------s--------------s------
    * -------------r-r-r-r-r-c-----e-c
    * -------------t-t-t-t-t-o-----e-o
-   * ---q--q--q-s-tqt-t-t-t-o--s--e-o
+   * s--q--q--q-s-tqt-t-t-t-o--s--e-o
    */
   var modificationS = makeModification(action);
   var queryS = modificationS.startWith(start)
@@ -105,7 +105,8 @@ module.export = function(action) {
     .reduce(_.extend, {});
   });
 
-  return queryS.combineLatest(respS, function(query, resp) {
-    return _.extend(query, resp);
-  });
+  return queryS;
+  //return queryS.combineLatest(respS, function(query, resp) {
+  //  return _.extend(query, resp);
+  //});
 };

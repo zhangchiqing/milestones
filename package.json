@@ -11,8 +11,6 @@
     "lodash": "^3.10.1",
     "moment": "^2.10.6",
     "rx": "^3.0.0",
-    "rx-dom": "^6.0.0",
-    "rx-lite": "^3.0.0",
     "virtual-dom": "^2.1.1"
   },
   "devDependencies": {},
