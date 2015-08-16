@@ -40,7 +40,7 @@ module.exports = function(mountNode) {
     editRepo: fromInputOfBody('js-repo'),
     editDuration: fromInputOfBody('js-duration'),
 
-    selectDay: fromEventOfRootElm(mountNode, 'click')
+    selectDay: Rx.Observable.fromEvent(mountNode, 'click')
       .filter(function(e) {
         return _.contains(e.target.className.split(' '), 'js-day');
       })

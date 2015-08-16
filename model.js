@@ -60,21 +60,29 @@ function makeModification(action) {
   });
   mods.push(modEditRepo);
 
-  var modEditDuration = action.editDuration.map(function(days) {
-    return function(query) {
-      query.days = days;
-      return query;
-    };
-  });
-  mods.push(modEditDuration);
-
-  var modSelectDay = action.selectDay.map(function(duration) {
+  var modEditDuration = action.editDuration.map(function(duration) {
     return function(query) {
       query.duration = duration;
       return query;
     };
   });
+  mods.push(modEditDuration);
+
+  var modSelectDay = action.selectDay.map(function(day) {
+    return function(query) {
+      // TODO: why called twice?
+      query.day = day;
+      return query;
+    };
+  });
   mods.push(modSelectDay);
+
+  var modEditWeeks = action.editWeeks.map(function(weeks) {
+    return function(query) {
+      query.weeks = weeks;
+      return query;
+    };
+  });
 
   return Rx.Observable.merge.apply(Rx.Observable, mods);
 }
@@ -103,10 +111,9 @@ module.exports = function(action) {
   var respS = submitS.flatMap(function createMilestones(querys) {
     return sequence(querys, createMilestone)
     .reduce(_.extend, {});
-  });
+  }).startWith({});
 
-  return queryS;
-  //return queryS.combineLatest(respS, function(query, resp) {
-  //  return _.extend(query, resp);
-  //});
+  return queryS.combineLatest(respS, function(query, resp) {
+    return _.extend(query, resp);
+  });
 };
