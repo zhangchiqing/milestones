@@ -70,7 +70,6 @@ function makeModification(action) {
 
   var modSelectDay = action.selectDay.map(function(day) {
     return function(query) {
-      // TODO: why called twice?
       query.day = day;
       return query;
     };
@@ -83,6 +82,7 @@ function makeModification(action) {
       return query;
     };
   });
+  mods.push(modEditWeeks);
 
   return Rx.Observable.merge.apply(Rx.Observable, mods);
 }
