@@ -1,5 +1,9 @@
 # milestones
-GitHub Milestone Generator
+GitHub Milestone Generator - Create your sprint as milestones in batch
+It's also a playground for myself to practice functional reactive programming.
+
+### Stack
+RxJS + Virtual-DOM
 
 ### Develop
 ```
