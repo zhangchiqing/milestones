@@ -3,7 +3,7 @@ GitHub Milestone Generator - Create your sprint as milestones in batch
 It's also a playground for myself to practice functional reactive programming.
 
 ### Stack
-RxJS + Virtual-DOM
+[RxJS](https://github.com/Reactive-Extensions/RxJS) + [Virtual-DOM](https://github.com/Matt-Esch/virtual-dom)
 
 ### Develop
 ```
