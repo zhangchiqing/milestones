@@ -44,6 +44,7 @@ href: 'https://help.github.com/articles/creating-an-access-token-for-command-lin
     ]),
     h('input.js-token.field.p1.col-10', { value: c.token }),
 
+    u.yes(c.error, h('.red.mt2', c.error)),
     h('button.js-submit.block.btn.btn-primary.mt2.p1.px3' +
       u.yes(c.processing, '.is-disabled'),
       'Create!'),

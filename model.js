@@ -139,6 +139,7 @@ module.exports = function(action) {
   var respS = batchQueryS.flatMap(function createMilestones(querys) {
     return sequence(querys, createMilestone)
     .catch(function(error) {
+      error = error.responseJSON ? error.responseJSON : error;
       return Rx.Observable.just({ error: error.message });
     });
     //.reduce(function(memo, resp) {
