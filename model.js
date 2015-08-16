@@ -1,8 +1,11 @@
+/* jshint -W079 */
 'use strict';
 
 var Rx = require('rx');
 var _ = require('lodash');
+var moment = require('moment');
 var u = require('./util');
+var $ = require('jquery');
 
 var start = {
   repo: 'zhangchiqing/milestones',
@@ -19,6 +22,23 @@ var start = {
   }),
 };
 
+function toQuery(args) {
+  var base = moment().day(args.day);
+  while (base.isBefore()) {
+    base.add(args.duration, 'days');
+  }
+
+  return _.map(_.range(args.weeks), function(i) {
+    var daysToAdd = args.duration * i;
+    var due = base.clone().add(daysToAdd, 'days');
+    return {
+      repo: args.repo,
+      token: args.token,
+      title: due.format('MMM DD, YYYY'),
+      due_on: due.toDate().toISOString(),
+    };
+  });
+}
 
 function createMilestone(query) {
   var key = [query.repo, query.title].join(':');
@@ -108,7 +128,9 @@ module.exports = function(action) {
     return query;
   });
 
-  var respS = submitS.flatMap(function createMilestones(querys) {
+  var batchQueryS = submitS.map(toQuery);
+
+  var respS = batchQueryS.flatMap(function createMilestones(querys) {
     return sequence(querys, createMilestone)
     .reduce(_.extend, {});
   }).startWith({});
