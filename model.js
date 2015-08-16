@@ -125,6 +125,7 @@ module.exports = function(action) {
   });
 
   var submitS = action.submit.withLatestFrom(queryS, function(click, query) {
+    query.processing = true;
     return query;
   });
 
@@ -133,9 +134,12 @@ module.exports = function(action) {
   var respS = batchQueryS.flatMap(function createMilestones(querys) {
     return sequence(querys, createMilestone)
     .reduce(_.extend, {});
-  }).startWith({});
+  })
+  .withLatestFrom(queryS, function(resp, query) {
+    query.processing = false;
+    return query;
+  })
+  .startWith({});
 
-  return queryS.combineLatest(respS, function(query, resp) {
-    return _.extend(query, resp);
-  });
+  return queryS.merge(submitS).merge(respS);
 };

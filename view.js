@@ -10,6 +10,7 @@ function attr(attrs) {
 }
 
 function renderWithContext(c) {
+  console.log('render', c);
   return h('.container.p3', [
     h('h1', 'GitHub Milestone Generator'),
     h('hr'),

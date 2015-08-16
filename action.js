@@ -1,21 +1,9 @@
 /* jshint -W079 */
-
 'use strict';
 
 var _ = require('lodash');
 var Rx = require('rx');
 var $ = require('jquery');
-
-function evtS(selector, evt, pluck) {
-  var elm = document.querySelector(selector);
-  var eS = Rx.DOM.fromEvent(elm, evt);
-
-  if (pluck) {
-    return eS.pluck('target', pluck);
-  } else {
-    return eS;
-  }
-}
 
 function fromEventOfRootElm(mountNode, evt, selector) {
   var hasClass = _.partialRight(_.contains, selector);
