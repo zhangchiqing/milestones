@@ -1,6 +1,8 @@
 'use strict';
 
-var action = require('./action')(document.body);
+var mountNode = document.body;
+var action = require('./action')(mountNode);
 var model = require('./model')(action);
 var view = require('./view')(model);
-var render = require('./render')(view);
+var render = require('./render')(mountNode);
+render(view);

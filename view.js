@@ -10,7 +10,6 @@ function attr(attrs) {
 }
 
 function renderWithContext(c) {
-  console.log('render', c);
   return h('.container.p3', [
     h('h1', 'GitHub Milestone Generator'),
     h('hr'),
@@ -53,7 +52,5 @@ href: 'https://help.github.com/articles/creating-an-access-token-for-command-lin
 }
 
 module.exports = function(model) {
-  return {
-    DOM: model.map(renderWithContext),
-  };
+  return model.map(renderWithContext);
 };
