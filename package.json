@@ -16,7 +16,7 @@
   "devDependencies": {},
   "scripts": {
     "start": "npm run beefy",
-    "beefy": "./node_modules/.bin/beefy main.js --debug --live --open",
+    "beefy": "./node_modules/.bin/beefy ./src/main.js --debug --live --open",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
