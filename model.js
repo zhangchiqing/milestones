@@ -2,16 +2,17 @@
 'use strict';
 
 var Rx = require('rx');
+var $ = require('jquery');
 var _ = require('lodash');
 var moment = require('moment');
 var u = require('./util');
-var $ = require('jquery');
 
 var start = {
   repo: 'zhangchiqing/milestones',
   duration: 7,
   day: 1,
   weeks: 1,
+  // TODO: remove token
   token: '93189dc467d5c7cb1db4efaa999bef3e1fda5357',
   days: _.range(1, 8).map(function(day) {
     return {
@@ -138,8 +139,7 @@ module.exports = function(action) {
   .withLatestFrom(queryS, function(resp, query) {
     query.processing = false;
     return query;
-  })
-  .startWith({});
+  });
 
   return queryS.merge(submitS).merge(respS);
 };

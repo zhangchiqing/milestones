@@ -26,4 +26,3 @@ module.exports = function(mountNode) {
     view.skip(1).subscribe(render);
   };
 };
-
