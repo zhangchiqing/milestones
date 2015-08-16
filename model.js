@@ -7,7 +7,7 @@ var _ = require('lodash');
 var moment = require('moment');
 var u = require('./util');
 
-var start = {
+var init = {
   repo: 'zhangchiqing/milestones',
   duration: 7,
   day: 1,
@@ -47,14 +47,15 @@ function createMilestone(query) {
     u.yes(query.token, '?access_token=' + query.token)]
     .join('');
   var body = _.pick(query, ['title', 'state', 'description', 'due_on']);
+  // TODO: validation
 
-  return Rx.Observable.fromPromise($.ajax({
+  return $.ajax({
     url: url,
     data: JSON.stringify(body),
     dataType: 'json',
     method: 'POST',
-  }))
-  .map(function(milestone) {
+  })
+  .then(function(milestone) {
     var report = {};
 
     report[key] = {
@@ -65,9 +66,11 @@ function createMilestone(query) {
   });
 }
 
-function sequence(list, returnObservable) {
+function sequence(list, returnPromise) {
   return Rx.Observable.fromArray(list)
-  .flatMap(returnObservable);
+  .flatMap(function(item) {
+    return Rx.Observable.fromPromise(returnPromise(item));
+  });
 }
 
 function makeModification(action) {
@@ -113,20 +116,21 @@ module.exports = function(action) {
   /**
    * ---m-----m--------
    * ------d-------d---
-   * ---q--q--q----q---
+   * i--q--q--q----q---
    * -----------s--------------s------
-   * -------------r-r-r-r-r-c-----e-c
+   *            --r-r-r-r-r-c  ---e-c
    * -------------t-t-t-t-t-o-----e-o
-   * s--q--q--q-s-tqt-t-t-t-o--s--e-o
+   * i--q--q--q-s-tqt-t-t-t-o--s--e-o
    */
   var modificationS = makeModification(action);
-  var queryS = modificationS.startWith(start)
+  var queryS = modificationS.startWith(init)
   .scan(function(query, modify) {
     return modify(query);
   });
 
   var submitS = action.submit.withLatestFrom(queryS, function(click, query) {
     query.processing = true;
+    query.error = null;
     return query;
   });
 
@@ -134,9 +138,15 @@ module.exports = function(action) {
 
   var respS = batchQueryS.flatMap(function createMilestones(querys) {
     return sequence(querys, createMilestone)
-    .reduce(_.extend, {});
+    .catch(function(error) {
+      return Rx.Observable.just({ error: error.message });
+    });
+    //.reduce(function(memo, resp) {
+    //  return _.extend(memo, resp);
+    //}, {});
   })
   .withLatestFrom(queryS, function(resp, query) {
+    _.extend(query, resp);
     query.processing = false;
     return query;
   });
