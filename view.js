@@ -1,6 +1,5 @@
 'use strict';
 
-var Rx = require('Rx');
 var _ = require('lodash');
 var h = require('virtual-dom/h');
 var u = require('./util');
