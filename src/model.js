@@ -23,8 +23,9 @@ var init = {
 };
 
 function toQuery(args) {
-  var base = moment().day(args.day);
-  while (base.isBefore()) {
+  var now = moment();
+  var base = now.day(args.day);
+  while (base.isBefore() && base.date() === now.date()) {
     base.add(args.duration, 'days');
   }
 
