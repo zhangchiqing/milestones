@@ -36884,8 +36884,8 @@ var _ = require('lodash');
 var Rx = require('rx');
 var $ = require('jquery');
 
-function fromEventOfRootElm(mountNode, evt, selector) {
-  var hasClass = _.partialRight(_.contains, selector);
+function fromEventOfRootElm(mountNode, evt, className) {
+  var hasClass = _.partialRight(_.contains, className);
 
   return Rx.Observable.fromEvent(mountNode, evt)
   .filter(function(e) {
@@ -36916,6 +36916,7 @@ module.exports = function(mountNode) {
       }),
 
     editWeeks: mapFilterNumber(fromInputOfBody('js-weeks')),
+    editToken: fromEventOfRootElm(mountNode, 'input', 'js-token'),
     submit: fromEventOfRootElm(mountNode, 'click', 'js-submit')
       .map(function() {
         return $(mountNode).find('.js-token').val();
@@ -36948,8 +36949,7 @@ var init = {
   duration: 7,
   day: 1,
   weeks: 1,
-  // TODO: remove token
-  token: '2939f7e73b0213d40a6709335962187528696c68',
+  token: '',
   days: _.range(1, 8).map(function(day) {
     return {
       day: day,
@@ -36960,8 +36960,9 @@ var init = {
 };
 
 function toQuery(args) {
-  var base = moment().day(args.day);
-  while (base.isBefore()) {
+  var now = moment();
+  var base = now.day(args.day);
+  while (base.isBefore() && base.date() === now.date()) {
     base.add(args.duration, 'days');
   }
 
@@ -37043,6 +37044,14 @@ function makeModification(action) {
   });
   mods.push(modEditWeeks);
 
+  var modEditToken = action.editToken.map(function(token) {
+    return function(query) {
+      query.token = token;
+      return query;
+    };
+  });
+  mods.push(modEditToken);
+
   return Rx.Observable.merge.apply(Rx.Observable, mods);
 }
 
@@ -37068,7 +37077,7 @@ module.exports = function(action) {
     return query;
   });
 
-  var submitS = action.submit.withLatestFrom(queryS, function(click, query) {
+  var submitS = action.submit.withLatestFrom(queryS, function(token, query) {
     query.processing = true;
     query.error = null;
     query.success = null;
@@ -37150,7 +37159,10 @@ function attr(attrs) {
 
 function renderWithContext(c) {
   return h('.container.p2', [
-    h('h1', 'GitHub Milestone Generator'),
+    h('h1', [
+      h('a', { href: 'https://github.com/zhangchiqing/milestones', target: '_blank' },
+        'GitHub Milestone Generator'),
+    ]),
     h('hr'),
 
     h('h3', 'Your repo name?'),
