@@ -5,8 +5,8 @@ var _ = require('lodash');
 var Rx = require('rx');
 var $ = require('jquery');
 
-function fromEventOfRootElm(mountNode, evt, selector) {
-  var hasClass = _.partialRight(_.contains, selector);
+function fromEventOfRootElm(mountNode, evt, className) {
+  var hasClass = _.partialRight(_.contains, className);
 
   return Rx.Observable.fromEvent(mountNode, evt)
   .filter(function(e) {
@@ -37,6 +37,7 @@ module.exports = function(mountNode) {
       }),
 
     editWeeks: mapFilterNumber(fromInputOfBody('js-weeks')),
+    editToken: fromEventOfRootElm(mountNode, 'input', 'js-token'),
     submit: fromEventOfRootElm(mountNode, 'click', 'js-submit')
       .map(function() {
         return $(mountNode).find('.js-token').val();

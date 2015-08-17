@@ -10,7 +10,10 @@ function attr(attrs) {
 
 function renderWithContext(c) {
   return h('.container.p2', [
-    h('h1', 'GitHub Milestone Generator'),
+    h('h1', [
+      h('a', { href: 'https://github.com/zhangchiqing/milestones', target: '_blank' },
+        'GitHub Milestone Generator'),
+    ]),
     h('hr'),
 
     h('h3', 'Your repo name?'),

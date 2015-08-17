@@ -12,8 +12,7 @@ var init = {
   duration: 7,
   day: 1,
   weeks: 1,
-  // TODO: remove token
-  token: '2939f7e73b0213d40a6709335962187528696c68',
+  token: '',
   days: _.range(1, 8).map(function(day) {
     return {
       day: day,
@@ -107,6 +106,14 @@ function makeModification(action) {
   });
   mods.push(modEditWeeks);
 
+  var modEditToken = action.editToken.map(function(token) {
+    return function(query) {
+      query.token = token;
+      return query;
+    };
+  });
+  mods.push(modEditToken);
+
   return Rx.Observable.merge.apply(Rx.Observable, mods);
 }
 
@@ -132,7 +139,7 @@ module.exports = function(action) {
     return query;
   });
 
-  var submitS = action.submit.withLatestFrom(queryS, function(click, query) {
+  var submitS = action.submit.withLatestFrom(queryS, function(token, query) {
     query.processing = true;
     query.error = null;
     query.success = null;
