@@ -22,12 +22,17 @@ var init = {
   }),
 };
 
+function nextWeekday(day) {
+  var base = moment();
+  day = day % 7;
+  do {
+    base.add(1, 'days');
+  } while (base.day() !== day);
+  return base;
+}
+
 function toQuery(args) {
-  var now = moment();
-  var base = now.day(args.day);
-  while (base.isBefore() && base.date() === now.date()) {
-    base.add(args.duration, 'days');
-  }
+  var base = nextWeekday(args.day);
 
   return _.map(_.range(args.weeks), function(i) {
     var daysToAdd = args.duration * i;
@@ -73,49 +78,44 @@ function sequence(list, returnPromise) {
 }
 
 function makeModification(action) {
-  var mods = [];
+  var modifications = {
+    modEditRepo: action.editRepo.map(function(repo) {
+      return function(query) {
+        query.repo = repo;
+        return query;
+      };
+    }),
 
-  var modEditRepo = action.editRepo.map(function(repo) {
-    return function(query) {
-      query.repo = repo;
-      return query;
-    };
-  });
-  mods.push(modEditRepo);
+    modEditDuration: action.editDuration.map(function(duration) {
+      return function(query) {
+        query.duration = duration;
+        return query;
+      };
+    }),
 
-  var modEditDuration = action.editDuration.map(function(duration) {
-    return function(query) {
-      query.duration = duration;
-      return query;
-    };
-  });
-  mods.push(modEditDuration);
+    modSelectDay: action.selectDay.map(function(day) {
+      return function(query) {
+        query.day = day;
+        return query;
+      };
+    }),
 
-  var modSelectDay = action.selectDay.map(function(day) {
-    return function(query) {
-      query.day = day;
-      return query;
-    };
-  });
-  mods.push(modSelectDay);
+    modEditWeeks: action.editWeeks.map(function(weeks) {
+      return function(query) {
+        query.weeks = weeks;
+        return query;
+      };
+    }),
 
-  var modEditWeeks = action.editWeeks.map(function(weeks) {
-    return function(query) {
-      query.weeks = weeks;
-      return query;
-    };
-  });
-  mods.push(modEditWeeks);
+    modEditToken: action.editToken.map(function(token) {
+      return function(query) {
+        query.token = token;
+        return query;
+      };
+    }),
+  };
 
-  var modEditToken = action.editToken.map(function(token) {
-    return function(query) {
-      query.token = token;
-      return query;
-    };
-  });
-  mods.push(modEditToken);
-
-  return Rx.Observable.merge.apply(Rx.Observable, mods);
+  return Rx.Observable.merge.apply(Rx.Observable, _.values(modifications));
 }
 
 module.exports = function(action) {
