@@ -25023,30 +25023,35 @@ return jQuery;
 
   var EmptyError = Rx.EmptyError = function() {
     this.message = 'Sequence contains no elements.';
+    this.name = 'EmptyError';
     Error.call(this);
   };
   EmptyError.prototype = Error.prototype;
 
   var ObjectDisposedError = Rx.ObjectDisposedError = function() {
     this.message = 'Object has been disposed';
+    this.name = 'ObjectDisposedError';
     Error.call(this);
   };
   ObjectDisposedError.prototype = Error.prototype;
 
   var ArgumentOutOfRangeError = Rx.ArgumentOutOfRangeError = function () {
     this.message = 'Argument out of range';
+    this.name = 'ArgumentOutOfRangeError';
     Error.call(this);
   };
   ArgumentOutOfRangeError.prototype = Error.prototype;
 
   var NotSupportedError = Rx.NotSupportedError = function (message) {
     this.message = message || 'This operation is not supported';
+    this.name = 'NotSupportedError';
     Error.call(this);
   };
   NotSupportedError.prototype = Error.prototype;
 
   var NotImplementedError = Rx.NotImplementedError = function (message) {
     this.message = message || 'This operation is not implemented';
+    this.name = 'NotImplementedError';
     Error.call(this);
   };
   NotImplementedError.prototype = Error.prototype;
@@ -25393,7 +25398,7 @@ return jQuery;
   var hasProp = {}.hasOwnProperty,
       slice = Array.prototype.slice;
 
-  var inherits = this.inherits = Rx.internals.inherits = function (child, parent) {
+  var inherits = Rx.internals.inherits = function (child, parent) {
     function __() { this.constructor = child; }
     __.prototype = parent.prototype;
     child.prototype = new __();
@@ -27381,25 +27386,28 @@ var FlatMapObservable = (function(__super__){
     }
 
     EmptyObservable.prototype.subscribeCore = function (observer) {
-      var sink = new EmptySink(observer, this);
+      var sink = new EmptySink(observer, this.scheduler);
       return sink.run();
     };
 
-    function EmptySink(observer, parent) {
+    function EmptySink(observer, scheduler) {
       this.observer = observer;
-      this.parent = parent;
+      this.scheduler = scheduler;
     }
 
     function scheduleItem(s, state) {
       state.onCompleted();
+      return disposableEmpty;
     }
 
     EmptySink.prototype.run = function () {
-      return this.parent.scheduler.scheduleWithState(this.observer, scheduleItem);
+      return this.scheduler.scheduleWithState(this.observer, scheduleItem);
     };
 
     return EmptyObservable;
   }(ObservableBase));
+
+  var EMPTY_OBSERVABLE = new EmptyObservable(immediateScheduler);
 
   /**
    *  Returns an empty observable sequence, using the specified scheduler to send out the single OnCompleted message.
@@ -27412,7 +27420,7 @@ var FlatMapObservable = (function(__super__){
    */
   var observableEmpty = Observable.empty = function (scheduler) {
     isScheduler(scheduler) || (scheduler = immediateScheduler);
-    return new EmptyObservable(scheduler);
+    return scheduler === immediateScheduler ? EMPTY_OBSERVABLE : new EmptyObservable(scheduler);
   };
 
   var FromObservable = (function(__super__) {
@@ -27743,12 +27751,14 @@ var FlatMapObservable = (function(__super__){
     return NeverObservable;
   }(ObservableBase));
 
+  var NEVER_OBSERVABLE = new NeverObservable();
+
   /**
    * Returns a non-terminating observable sequence, which can be used to denote an infinite duration (e.g. when using reactive joins).
    * @returns {Observable} An observable sequence whose observers will never get called.
    */
   var observableNever = Observable.never = function () {
-    return new NeverObservable();
+    return NEVER_OBSERVABLE;
   };
 
   var PairsObservable = (function(__super__) {
@@ -27908,23 +27918,28 @@ var FlatMapObservable = (function(__super__){
     }
 
     JustObservable.prototype.subscribeCore = function (observer) {
-      var sink = new JustSink(observer, this);
+      var sink = new JustSink(observer, this.value, this.scheduler);
       return sink.run();
     };
 
-    function JustSink(observer, parent) {
+    function JustSink(observer, value, scheduler) {
       this.observer = observer;
-      this.parent = parent;
+      this.value = value;
+      this.scheduler = scheduler;
     }
 
     function scheduleItem(s, state) {
       var value = state[0], observer = state[1];
       observer.onNext(value);
       observer.onCompleted();
+      return disposableEmpty;
     }
 
     JustSink.prototype.run = function () {
-      return this.parent.scheduler.scheduleWithState([this.parent.value, this.observer], scheduleItem);
+      var state = [this.value, this.observer];
+      return this.scheduler === immediateScheduler ?
+        scheduleItem(null, state) :
+        this.scheduler.scheduleWithState(state, scheduleItem);
     };
 
     return JustObservable;
@@ -29253,7 +29268,7 @@ var FlatMapObservable = (function(__super__){
    * @param {Function} finallyAction Action to invoke after the source observable sequence terminates.
    * @returns {Observable} Source sequence with the action-invoking termination behavior applied.
    */
-  observableProto['finally'] = observableProto.ensure = function (action) {
+  observableProto['finally'] = function (action) {
     var source = this;
     return new AnonymousObservable(function (observer) {
       var subscription = tryCatch(source.subscribe).call(source, observer);
@@ -31031,7 +31046,16 @@ Rx.Observable.prototype.flatMapLatest = function(selector, resultSelector, thisA
     }, source);
   };
 
-  var spawn = Observable.spawn = function () {
+var wrap = Observable.wrap = function (fn) {
+    createObservable.__generatorFunction__ = fn;
+    return createObservable;
+
+    function createObservable() {
+        return Observable.spawn.call(this, fn.apply(this, arguments));
+    }
+};
+
+var spawn = Observable.spawn = function () {
     var gen = arguments[0], self = this, args = [];
     for (var i = 1, len = arguments.length; i < len; i++) { args.push(arguments[i]); }
 
@@ -31062,6 +31086,7 @@ Rx.Observable.prototype.flatMapLatest = function(selector, resultSelector, thisA
         if (ret.done) {
           o.onNext(ret.value);
           o.onCompleted();
+          return;
         }
         var value = toObservable.call(self, ret.value);
         if (Observable.isObservable(value)) {
@@ -31075,77 +31100,76 @@ Rx.Observable.prototype.flatMapLatest = function(selector, resultSelector, thisA
     });
   }
 
-  function toObservable(obj) {
-    if (!obj) { return obj; }
-    if (Observable.isObservable(obj)) { return obj; }
-    if (isPromise(obj)) { return Observable.fromPromise(obj); }
-    if (isGeneratorFunction(obj) || isGenerator(obj)) { return spawn.call(this, obj); }
-    if (isFunction(obj)) { return thunkToObservable.call(this, obj); }
-    if (isArrayLike(obj) || isIterable(obj)) { return arrayToObservable.call(this, obj); }
-    if (isObject(obj)) return objectToObservable.call(this, obj);
-    return obj;
-  }
+function toObservable(obj) {
+  if (!obj) { return obj; }
+  if (Observable.isObservable(obj)) { return obj; }
+  if (isPromise(obj)) { return Observable.fromPromise(obj); }
+  if (isGeneratorFunction(obj) || isGenerator(obj)) { return spawn.call(this, obj); }
+  if (isFunction(obj)) { return thunkToObservable.call(this, obj); }
+  if (isArrayLike(obj) || isIterable(obj)) { return arrayToObservable.call(this, obj); }
+  if (isObject(obj)) {return objectToObservable.call(this, obj);}
+  return obj;
+}
 
-  function arrayToObservable (obj) {
-    return Observable.from(obj)
-      .map(toObservable, this)
+function arrayToObservable (obj) {
+  return Observable.from(obj)
+      .flatMap(toObservable)
       .toArray();
+}
+
+function objectToObservable (obj) {
+  var results = new obj.constructor(), keys = Object.keys(obj), observables = [];
+  for (var i = 0, len = keys.length; i < len; i++) {
+    var key = keys[i];
+    var observable = toObservable.call(this, obj[key]);
+
+    if(observable && Observable.isObservable(observable)) {
+      defer(observable, key);
+    } else {
+      results[key] = obj[key];
+    }
   }
 
-  function objectToObservable (obj) {
-    var results = new obj.constructor(), keys = Object.keys(obj), observables = [];
-    for (var i = 0, len = keys.length; i < len; i++) {
-      var key = keys[i], observable = toObservable.call(this, obj[key]);
-      if (observable && Observable.isObservable(observable)) {
-        defer(observable, key);
-      } else {
-        results[key] = obj[key];
+  return Observable.forkJoin.apply(Observable, observables).map(function() {
+    return results;
+  });
+
+
+  function defer (observable, key) {
+    results[key] = undefined;
+    observables.push(observable.map(function (next) {
+      results[key] = next;
+    }));
+  }
+}
+
+function thunkToObservable(fn) {
+  var self = this;
+  return new AnonymousObservable(function (o) {
+    fn.call(self, function () {
+      var err = arguments[0], res = arguments[1];
+      if (err) { return o.onError(err); }
+      if (arguments.length > 2) {
+        var args = [];
+        for (var i = 1, len = arguments.length; i < len; i++) { args.push(arguments[i]); }
+        res = args;
       }
-    }
-    return Observable.concat(observables).startWith(results);
-
-    function defer (observable, key) {
-      results[key] = undefined;
-      observables.push(new AnonymousObservable(function (o) {
-        return observable.subscribe(function (next) {
-          results[key] = next;
-          o.onCompleted();
-        });
-      }));
-    }
-  }
-
-  function thunkToObservable(fn) {
-    var self = this;
-    return new AnonymousObservable(function (o) {
-      fn.call(self, function () {
-        var err = arguments[0], res = arguments[1];
-        if (err) { return o.onError(err); }
-        if (arguments.length > 2) {
-          var args = [];
-          for (var i = 1, len = arguments.length; i < len; i++) { args.push(arguments[i]); }
-          res = args;
-        }
-        o.onNext(res);
-        o.onCompleted();
-      });
+      o.onNext(res);
+      o.onCompleted();
     });
-  }
+  });
+}
 
-  function isGenerator(obj) {
-    return isFunction (obj.next) && isFunction (obj.throw);
-  }
+function isGenerator(obj) {
+  return isFunction (obj.next) && isFunction (obj.throw);
+}
 
-  function isGeneratorFunction(obj) {
-    var ctor = obj.constructor;
-    if (!ctor) { return false; }
-    if (ctor.name === 'GeneratorFunction' || ctor.displayName === 'GeneratorFunction') { return true; }
-    return isGenerator(ctor.prototype);
-  }
-
-  function isObject(val) {
-    return Object == val.constructor;
-  }
+function isGeneratorFunction(obj) {
+  var ctor = obj.constructor;
+  if (!ctor) { return false; }
+  if (ctor.name === 'GeneratorFunction' || ctor.displayName === 'GeneratorFunction') { return true; }
+  return isGenerator(ctor.prototype);
+}
 
   /**
    * Invokes the specified function asynchronously on the specified scheduler, surfacing the result through an observable sequence.
@@ -31236,6 +31260,8 @@ function createCbHandler(o, ctx, selector) {
  */
 Observable.fromCallback = function (fn, ctx, selector) {
   return function () {
+    typeof ctx === 'undefined' && (ctx = this); 
+
     var len = arguments.length, args = new Array(len)
     for(var i = 0; i < len; i++) { args[i] = arguments[i]; }
     return createCbObservable(fn, ctx, selector, args);
@@ -31284,6 +31310,7 @@ function createNodeHandler(o, ctx, selector) {
  */
 Observable.fromNodeCallback = function (fn, ctx, selector) {
   return function () {
+    typeof ctx === 'undefined' && (ctx = this); 
     var len = arguments.length, args = new Array(len);
     for(var i = 0; i < len; i++) { args[i] = arguments[i]; }
     return createNodeObservable(fn, ctx, selector, args);
@@ -31308,8 +31335,8 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
     var disposables = new CompositeDisposable();
 
     // Asume NodeList or HTMLCollection
-    var toStr = Object.prototype.toString;
-    if (toStr.call(el) === '[object NodeList]' || toStr.call(el) === '[object HTMLCollection]') {
+    var elemToString = Object.prototype.toString.call(el);
+    if (elemToString === '[object NodeList]' || elemToString === '[object HTMLCollection]') {
       for (var i = 0, len = el.length; i < len; i++) {
         disposables.add(createEventListener(el.item(i), eventName, handler));
       }
@@ -31324,6 +31351,17 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
    * Configuration option to determine whether to use native events only
    */
   Rx.config.useNativeEvents = false;
+
+  function eventHandler(o, selector) {
+    return function handler () {
+      var results = arguments[0];
+      if (isFunction(selector)) {
+        results = tryCatch(selector).apply(null, arguments);
+        if (results === errorObj) { return o.onError(results.e); }
+      }
+      o.onNext(results);
+    };
+  }
 
   /**
    * Creates an observable sequence by adding an event listener to the matching DOMElement or each item in the NodeList.
@@ -31352,22 +31390,11 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
       }
     }
 
-    function eventHandler(o) {
-      return function handler () {
-        var results = arguments[0];
-        if (isFunction(selector)) {
-          results = tryCatch(selector).apply(null, arguments);
-          if (results === errorObj) { return o.onError(results.e); }
-        }
-        o.onNext(results);
-      };
-    }
-
     return new AnonymousObservable(function (o) {
       return createEventListener(
         element,
         eventName,
-        eventHandler(o));
+        eventHandler(o, selector));
     }).publish().refCount();
   };
 
@@ -31376,9 +31403,11 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
    * @param {Function} addHandler The function to add a handler to the emitter.
    * @param {Function} [removeHandler] The optional function to remove a handler from an emitter.
    * @param {Function} [selector] A selector which takes the arguments from the event handler to produce a single item to yield on next.
+   * @param {Scheduler} [scheduler] A scheduler used to schedule the remove handler.
    * @returns {Observable} An observable sequence which wraps an event from an event emitter
    */
-  var fromEventPattern = Observable.fromEventPattern = function (addHandler, removeHandler, selector) {
+  var fromEventPattern = Observable.fromEventPattern = function (addHandler, removeHandler, selector, scheduler) {
+    isScheduler(scheduler) || (scheduler = immediateScheduler);
     return new AnonymousObservable(function (o) {
       function innerHandler () {
         var result = arguments[0];
@@ -36959,12 +36988,17 @@ var init = {
   }),
 };
 
+function nextWeekday(day) {
+  var base = moment();
+  day = day % 7;
+  do {
+    base.add(1, 'days');
+  } while (base.day() !== day);
+  return base;
+}
+
 function toQuery(args) {
-  var now = moment();
-  var base = now.day(args.day);
-  while (base.isBefore() && base.date() === now.date()) {
-    base.add(args.duration, 'days');
-  }
+  var base = nextWeekday(args.day);
 
   return _.map(_.range(args.weeks), function(i) {
     var daysToAdd = args.duration * i;
@@ -37010,49 +37044,44 @@ function sequence(list, returnPromise) {
 }
 
 function makeModification(action) {
-  var mods = [];
+  var modifications = {
+    modEditRepo: action.editRepo.map(function(repo) {
+      return function(query) {
+        query.repo = repo;
+        return query;
+      };
+    }),
 
-  var modEditRepo = action.editRepo.map(function(repo) {
-    return function(query) {
-      query.repo = repo;
-      return query;
-    };
-  });
-  mods.push(modEditRepo);
+    modEditDuration: action.editDuration.map(function(duration) {
+      return function(query) {
+        query.duration = duration;
+        return query;
+      };
+    }),
 
-  var modEditDuration = action.editDuration.map(function(duration) {
-    return function(query) {
-      query.duration = duration;
-      return query;
-    };
-  });
-  mods.push(modEditDuration);
+    modSelectDay: action.selectDay.map(function(day) {
+      return function(query) {
+        query.day = day;
+        return query;
+      };
+    }),
 
-  var modSelectDay = action.selectDay.map(function(day) {
-    return function(query) {
-      query.day = day;
-      return query;
-    };
-  });
-  mods.push(modSelectDay);
+    modEditWeeks: action.editWeeks.map(function(weeks) {
+      return function(query) {
+        query.weeks = weeks;
+        return query;
+      };
+    }),
 
-  var modEditWeeks = action.editWeeks.map(function(weeks) {
-    return function(query) {
-      query.weeks = weeks;
-      return query;
-    };
-  });
-  mods.push(modEditWeeks);
+    modEditToken: action.editToken.map(function(token) {
+      return function(query) {
+        query.token = token;
+        return query;
+      };
+    }),
+  };
 
-  var modEditToken = action.editToken.map(function(token) {
-    return function(query) {
-      query.token = token;
-      return query;
-    };
-  });
-  mods.push(modEditToken);
-
-  return Rx.Observable.merge.apply(Rx.Observable, mods);
+  return Rx.Observable.merge.apply(Rx.Observable, _.values(modifications));
 }
 
 module.exports = function(action) {
