@@ -138,7 +138,8 @@ module.exports = function(action) {
   .map(function(query) {
     query.querys = toQuery(query);
     return query;
-  });
+  })
+  .share();
 
   var submitS = action.submit.withLatestFrom(queryS, function(token, query) {
     query.processing = true;
