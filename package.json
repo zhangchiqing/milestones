@@ -5,7 +5,6 @@
   "main": "",
   "dependencies": {
     "basscss": "^7.0.3",
-    "beefy": "^2.1.5",
     "browserify": "^11.0.1",
     "jquery": "^2.1.4",
     "lodash": "^3.10.1",
@@ -13,7 +12,9 @@
     "rx": "^3.0.0",
     "virtual-dom": "^2.1.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "beefy": "^2.1.5"
+  },
   "scripts": {
     "start": "npm run dev",
     "dev": "./node_modules/.bin/beefy ./src/main.js --debug --live --open",
